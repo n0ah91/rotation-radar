@@ -1,0 +1,223 @@
+# Theme Taxonomy Configuration
+# Hierarchy: Macro Theme → Theme → Sub-theme → Tickers/ETFs
+# Keywords are used for entity extraction from documents
+
+macro_themes:
+  Energy:
+    description: "Power generation, grid, and energy infrastructure"
+    
+    Nuclear:
+      description: "Nuclear power renaissance driven by AI demand"
+      keywords: ["nuclear", "uranium", "SMR", "reactor", "NRC", "fission"]
+      catalyst_tags: ["DOE_loans", "NRC_approval", "data_center_deals"]
+      risk_tags: ["regulatory_delay", "cost_overrun", "policy_reversal"]
+      
+      SMR_Builders:
+        keywords: ["small modular reactor", "SMR", "microreactor"]
+        tickers: [OKLO, SMR, NNE]
+        etfs: []
+      
+      Fuel_Cycle:
+        keywords: ["uranium", "enrichment", "conversion", "yellowcake", "U3O8"]
+        tickers: [CCJ, UEC, UUUU, LEU, DNN]
+        etfs: [URNM, URA]
+      
+      Utilities_Nuclear:
+        keywords: ["nuclear fleet", "uprate", "license extension", "restart"]
+        tickers: [CEG, VST, NRG, PEG]
+        etfs: [XLU]
+    
+    Grid:
+      description: "Grid infrastructure, storage, and transmission"
+      keywords: ["grid", "transmission", "storage", "battery", "interconnect"]
+      catalyst_tags: ["IRA_funding", "utility_capex", "interconnect_queue"]
+      
+      Storage:
+        keywords: ["battery storage", "BESS", "energy storage"]
+        tickers: [EOSE, FLNC, STEM]
+        etfs: []
+      
+      Transmission:
+        keywords: ["transmission", "T&D", "substation", "transformer"]
+        tickers: [NEE, ETN, PWR, EMR]
+        etfs: []
+      
+      Switchgear:
+        keywords: ["switchgear", "electrical equipment", "medium voltage"]
+        tickers: [VRT, ETN, POWL]
+        etfs: []
+
+  AI_Infrastructure:
+    description: "AI compute, data centers, and enabling infrastructure"
+    keywords: ["artificial intelligence", "AI infrastructure", "AI spending", "AI capex"]
+
+    Data_Centers:
+      description: "Physical AI infrastructure"
+      keywords: ["data center", "datacenter", "hyperscaler", "colo"]
+      catalyst_tags: ["hyperscaler_capex", "AI_training", "inference_demand"]
+      risk_tags: ["power_constraints", "permitting", "oversupply"]
+      
+      Compute:
+        keywords: ["GPU", "AI chip", "accelerator", "training", "inference"]
+        tickers: [NVDA, AMD, AVGO, MRVL, ARM]
+        etfs: [SMH, SOXX]
+      
+      Neocloud:
+        keywords: ["neocloud", "GPU cloud", "AI compute", "HPC"]
+        tickers: [IREN, CIFR, CLSK, COREWEAVE]
+        etfs: []
+      
+      Power_Cooling:
+        keywords: ["data center power", "liquid cooling", "PDU"]
+        tickers: [VRT, FLEX]
+        etfs: []
+      
+      Real_Estate:
+        keywords: ["data center REIT", "colo provider"]
+        tickers: [EQIX, DLR, AMT]
+        etfs: []
+    
+    Software:
+      description: "AI software platforms and applications"
+      keywords: ["AI platform", "ML ops", "data platform"]
+      
+      Platforms:
+        keywords: ["data platform", "analytics", "observability"]
+        tickers: [PLTR, SNOW, MDB, DDOG, CFLT]
+        etfs: []
+      
+      Cybersecurity:
+        keywords: ["cybersecurity", "security", "zero trust", "SIEM"]
+        tickers: [CRWD, PANW, ZS, FTNT, S]
+        etfs: [BUG, HACK]
+
+  Space_Defense:
+    description: "Space economy and defense technology"
+    
+    Space:
+      description: "Commercial space industry"
+      keywords: ["space", "satellite", "launch", "LEO", "orbit"]
+      catalyst_tags: ["launch_cadence", "constellation_deployment", "government_contracts"]
+      
+      Launch:
+        keywords: ["rocket", "launch vehicle", "reusable"]
+        tickers: [RKLB, LUNR]
+        etfs: [UFO]
+      
+      Satellites:
+        keywords: ["satellite", "constellation", "direct-to-device", "LEO"]
+        tickers: [ASTS, PL, IRDM, GSAT]
+        etfs: []
+      
+      Infrastructure:
+        keywords: ["space station", "in-space manufacturing"]
+        tickers: [VSAT, MAXR]
+        etfs: []
+    
+    Defense:
+      description: "Defense contractors and technology"
+      keywords: ["defense", "military", "DoD", "Pentagon"]
+      catalyst_tags: ["budget_increase", "contract_awards", "geopolitical"]
+      risk_tags: ["budget_cuts", "program_cancellation"]
+      
+      Primes:
+        keywords: ["defense contractor", "prime contractor"]
+        tickers: [LMT, RTX, NOC, GD, BA]
+        etfs: [ITA, XAR]
+      
+      Drones_Autonomy:
+        keywords: ["drone", "UAV", "autonomous", "unmanned"]
+        tickers: [AVAV, KTOS, JOBY]
+        etfs: []
+      
+      Cybersecurity_Defense:
+        keywords: ["defense cyber", "military cyber"]
+        tickers: [LDOS, BAH, CACI]
+        etfs: []
+
+  Fintech_Crypto:
+    description: "Financial technology and digital assets"
+    
+    Crypto:
+      description: "Cryptocurrency and blockchain"
+      keywords: ["bitcoin", "crypto", "blockchain", "BTC", "ETH"]
+      catalyst_tags: ["ETF_flows", "halving", "institutional_adoption"]
+      risk_tags: ["regulation", "exchange_risk"]
+      
+      Bitcoin_Exposure:
+        keywords: ["bitcoin", "BTC", "digital gold"]
+        tickers: []
+        etfs: [IBIT, GBTC, BITO]
+      
+      Miners:
+        keywords: ["bitcoin mining", "hash rate", "ASIC"]
+        tickers: [MARA, RIOT, CLSK, IREN]
+        etfs: []
+      
+      Infrastructure:
+        keywords: ["crypto exchange", "stablecoin", "DeFi"]
+        tickers: [COIN]
+        etfs: []
+    
+    Fintech:
+      description: "Financial technology platforms"
+      keywords: ["fintech", "digital bank", "neobank"]
+      
+      Brokerage:
+        keywords: ["brokerage", "retail trading", "options trading"]
+        tickers: [HOOD, IBKR, SCHW]
+        etfs: [IAI]
+      
+      Payments:
+        keywords: ["payments", "BNPL", "digital wallet"]
+        tickers: [SQ, PYPL, AFRM, FOUR]
+        etfs: []
+
+  Healthcare_Biotech:
+    description: "Healthcare and biotechnology"
+    
+    Biotech:
+      description: "Biotechnology and drug development"
+      keywords: ["biotech", "drug", "FDA", "clinical trial"]
+      
+      Large_Cap:
+        keywords: ["big pharma", "large cap biotech"]
+        tickers: [LLY, NVO, ABBV, MRK]
+        etfs: [XBI, IBB]
+      
+      Obesity_GLP1:
+        keywords: ["GLP-1", "weight loss", "obesity", "Ozempic", "Wegovy"]
+        tickers: [LLY, NVO, VKTX, AMGN]
+        etfs: []
+
+  Industrials:
+    description: "Industrial and infrastructure"
+    
+    Reshoring:
+      description: "US manufacturing renaissance"
+      keywords: ["reshoring", "onshoring", "made in USA", "domestic manufacturing"]
+      
+      Construction:
+        keywords: ["construction", "industrial construction"]
+        tickers: [URI, CAT, DE]
+        etfs: [XLI]
+      
+      Automation:
+        keywords: ["factory automation", "robotics", "industrial automation"]
+        tickers: [ROK, EMR, HON]
+        etfs: [ROBO]
+
+# Global keywords that map to multiple themes
+global_keywords:
+  bullish: ["buy", "buying", "long", "bullish", "moon", "rocket", "breakout", "adding", "loading"]
+  bearish: ["sell", "short", "bearish", "dump", "crash", "puts", "exit"]
+  uncertainty: ["maybe", "might", "could", "uncertain", "wait", "watching"]
+  euphoria: ["🚀", "moon", "diamond hands", "YOLO", "all in", "can't lose", "free money"]
+
+# Catalyst types for classification
+catalyst_types:
+  - policy: ["bill", "law", "regulation", "DOE", "EPA", "IRA", "administration"]
+  - earnings: ["earnings", "revenue", "guidance", "beat", "miss", "EPS"]
+  - contracts: ["contract", "award", "deal", "partnership", "acquisition"]
+  - technical: ["breakout", "support", "resistance", "channel", "pattern"]
+  - macro: ["Fed", "rates", "inflation", "GDP", "employment", "CPI"]

@@ -1,0 +1,33 @@
+# Rotation Radar - Dependencies
+# Streamlit Cloud compatible (lightweight, no ML frameworks)
+
+# Core
+python-dateutil>=2.8.2
+pyyaml>=6.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Data Collection
+feedparser>=6.0.0       # RSS feeds
+
+# Price Data
+yfinance>=0.2.28        # Stock prices & divergence
+
+# Database
+sqlalchemy>=2.0.0       # ORM (SQLite built into Python)
+
+# UI
+streamlit>=1.29.0       # Dashboard
+plotly>=5.18.0          # Interactive charts
+
+# HTTP & Parsing
+requests>=2.31.0
+beautifulsoup4>=4.12.0  # HTML parsing
+
+# Optional (not installed on Streamlit Cloud):
+# praw>=7.7.0                     # Reddit API
+# torch>=2.0.0                    # FinBERT sentiment (rule-based fallback used instead)
+# transformers>=4.35.0            # FinBERT models
+# spacy>=3.7.0                    # NER (dictionary/regex fallback used instead)
+# google-api-python-client>=2.0.0 # YouTube API
+# youtube-transcript-api>=0.6.0   # YouTube transcripts

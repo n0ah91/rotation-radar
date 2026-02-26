@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Configuration with secrets
+config/config.yaml
+
+# Data files
+data/
+*.db
+*.sqlite
+*.csv
+
+# Logs
+logs/
+*.log
+
+# Temp files
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model caches
+.cache/
+/models/
+
+# Streamlit
+.streamlit/secrets.toml

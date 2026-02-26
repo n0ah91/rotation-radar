@@ -1,0 +1,57 @@
+# Rotation Radar Configuration
+# Copy this to config.yaml and fill in your credentials
+
+# Reddit API credentials (get from https://www.reddit.com/prefs/apps)
+reddit:
+  client_id: "YOUR_CLIENT_ID"
+  client_secret: "YOUR_CLIENT_SECRET"
+  user_agent: "RotationRadar/1.0"
+
+# Optional: Twitter/X API (paid tier required)
+twitter:
+  enabled: false
+  bearer_token: ""
+
+# Optional: YouTube API (for transcript fetching)
+youtube:
+  enabled: false
+  api_key: ""
+
+# Database settings
+database:
+  path: "data/radar.db"
+
+# Collection schedule (cron syntax)
+schedule:
+  reddit: "0 */6 * * *"  # Every 6 hours
+  youtube: "0 0 * * *"   # Daily
+  rss: "0 */4 * * *"     # Every 4 hours
+
+# Signal thresholds
+thresholds:
+  now_score: 80
+  build_score: 60
+  watch_score: 40
+  
+  # Gates
+  breadth_min_unique_authors_z: 0.0
+  breadth_min_cross_platform: 0.5
+  quality_min_weighted_score: 0.6
+  pump_max_concentration: 0.70
+  pump_max_account_age_days: 30
+
+# Alert settings
+alerts:
+  enabled: true
+  types:
+    - rotation_ignition
+    - divergence_edge
+    - overheat_late
+  # Optional: Send to Slack/Discord/email
+  webhook_url: ""
+
+# UI settings
+ui:
+  default_window: "7d"
+  max_items_home: 25
+  theme_primary: "#1f77b4"

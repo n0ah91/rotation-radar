@@ -1,0 +1,137 @@
+# Curated Sources Configuration
+# Adjust weights based on source quality and your preferences
+
+reddit:
+  subreddits:
+    # High-signal retail sentiment
+    - name: wallstreetbets
+      weight: 1.0
+      category: retail_momentum
+      description: "High volume, early meme detection, noisy but important"
+    
+    - name: investing
+      weight: 0.9
+      category: general
+      description: "More thoughtful, longer-term focus"
+    
+    - name: stocks
+      weight: 0.8
+      category: general
+      description: "General stock discussion"
+    
+    - name: options
+      weight: 0.7
+      category: derivatives
+      description: "Options flow and sentiment"
+    
+    # Sector-specific (higher weight = more trusted for that sector)
+    - name: uraniumsqueeze
+      weight: 1.5
+      category: nuclear
+      description: "Nuclear/uranium focused, early signals"
+    
+    - name: spacex
+      weight: 1.2
+      category: space
+      description: "Space industry discussion"
+    
+    - name: energy
+      weight: 0.9
+      category: energy
+      description: "Broad energy sector"
+    
+    - name: semiconductor
+      weight: 1.0
+      category: tech
+      description: "Chip industry discussion"
+    
+    # Speculative (lower weight)
+    - name: pennystocks
+      weight: 0.5
+      category: speculative
+      description: "Small caps, higher noise"
+    
+    - name: spacs
+      weight: 0.6
+      category: speculative
+      description: "SPAC-focused discussion"
+
+youtube:
+  channels:
+    # Finance/investing channels
+    - handle: "@InvestAnswers"
+      weight: 1.2
+      category: macro
+      description: "Data-driven macro analysis"
+    
+    - handle: "@TheChartGuys"
+      weight: 1.0
+      category: technical
+      description: "Technical analysis focus"
+    
+    - handle: "@GameofTrades"
+      weight: 0.9
+      category: macro
+      description: "Macro perspectives"
+
+rss:
+  feeds:
+    - name: SeekingAlpha
+      url: "https://seekingalpha.com/feed.xml"
+      weight: 0.8
+      category: analysis
+
+    - name: ZeroHedge
+      url: "https://www.zerohedge.com/fullrss2.xml"
+      weight: 0.6
+      category: macro
+      description: "Contrarian, sometimes early on narratives"
+
+    - name: Yahoo_Finance
+      url: "https://finance.yahoo.com/news/rssindex"
+      weight: 0.7
+      category: general
+      description: "Broad market and financial news"
+
+    - name: MarketWatch
+      url: "https://feeds.marketwatch.com/marketwatch/topstories/"
+      weight: 0.7
+      category: general
+      description: "Market news and analysis"
+
+    - name: CNBC_Market
+      url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258"
+      weight: 0.6
+      category: general
+      description: "CNBC market news"
+
+    - name: Reuters_Business
+      url: "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best"
+      weight: 0.8
+      category: analysis
+      description: "Reuters sector/business coverage"
+
+    - name: Investopedia
+      url: "https://www.investopedia.com/feedbuilder/feed/getfeed/?feedName=rss_headline"
+      weight: 0.5
+      category: educational
+      description: "Market education and news"
+
+stocktwits:
+  enabled: false  # Requires scraping or API
+  symbols: []
+
+twitter:
+  enabled: false  # Requires paid API
+  
+  # When enabled, add your curated accounts
+  accounts: []
+  #  - handle: "@uraniuminsider"
+  #    weight: 2.0
+  #    category: nuclear
+  #  - handle: "@michaeljburry"
+  #    weight: 1.5
+  #    category: macro
+  
+  lists: []
+  # List IDs for curated lists you follow
