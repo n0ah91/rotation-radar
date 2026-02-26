@@ -160,6 +160,20 @@ def get_label_color(label: DecisionLabel) -> str:
 def render_sidebar():
     """Render the sidebar with global controls"""
     st.sidebar.title("Rotation Radar")
+
+    # Pipeline control — at the top so it's always visible
+    session_check = get_session()
+    doc_count = session_check.query(Document).count()
+    signal_count = session_check.query(Signal).count()
+    entity_count = session_check.query(Entity).count()
+    session_check.close()
+
+    if doc_count == 0:
+        st.sidebar.warning("No data yet — click below to populate.")
+    if st.sidebar.button("🔄 Run Pipeline", type="primary", use_container_width=True):
+        run_pipeline_from_ui()
+    st.sidebar.caption(f"📊 {doc_count} docs · {entity_count} entities · {signal_count} signals")
+
     st.sidebar.markdown("---")
 
     # Time window selector
@@ -196,27 +210,6 @@ def render_sidebar():
 
     # Top N
     top_n = st.sidebar.slider("Top N Items", 5, 50, 25)
-
-    st.sidebar.markdown("---")
-
-    # Database info
-    session = get_session()
-    doc_count = session.query(Document).count()
-    entity_count = session.query(Entity).count()
-    signal_count = session.query(Signal).count()
-    session.close()
-
-    st.sidebar.metric("Documents", doc_count)
-    st.sidebar.metric("Entities Tracked", entity_count)
-    st.sidebar.metric("Signals Computed", signal_count)
-
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Pipeline Control")
-    if st.sidebar.button("Run Pipeline", type="primary", use_container_width=True):
-        run_pipeline_from_ui()
-
-    if doc_count == 0:
-        st.sidebar.caption("Click 'Run Pipeline' to collect data and compute signals.")
 
     return {
         "window": window,
