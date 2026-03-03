@@ -21,6 +21,7 @@ import pandas as pd
 from sqlalchemy import func, distinct
 
 from ..models.database import (
+    DailySnapshot,
     Document,
     DocumentEntity,
     Entity,
@@ -122,8 +123,9 @@ class VelocityEngine:
             # Source diversity (entropy across sources)
             metrics["source_diversity"] = self._compute_source_diversity(window_docs)
 
-            # Platform count (cross-platform)
+            # Platform count (cross-platform) and source names
             metrics["platform_count"] = self._count_platforms(session, window_docs)
+            metrics["source_names"] = self._get_source_names(session, window_docs)
 
             # Engagement totals
             metrics["total_engagement"] = sum(
@@ -237,15 +239,24 @@ class VelocityEngine:
         return entropy
 
     def _count_platforms(self, session, docs: List[Document]) -> int:
-        """Count unique platforms represented in documents"""
+        """Count unique sources (not source types) represented in documents.
+
+        Each distinct source (SeekingAlpha, Yahoo Finance, etc.) counts as
+        its own platform, not grouped by source_type.
+        """
         if not docs:
             return 0
+        return len(set(d.source_id for d in docs if d.source_id))
 
-        source_ids = set(d.source_id for d in docs)
+    def _get_source_names(self, session, docs: List[Document]) -> List[str]:
+        """Get list of source names covering these documents."""
+        if not docs:
+            return []
+        source_ids = set(d.source_id for d in docs if d.source_id)
+        if not source_ids:
+            return []
         sources = session.query(Source).filter(Source.id.in_(source_ids)).all()
-
-        platforms = set(s.source_type for s in sources)
-        return len(platforms)
+        return sorted(set(s.name for s in sources if s.name))
 
     def _compute_cross_platform_score(
         self,
@@ -253,30 +264,26 @@ class VelocityEngine:
         docs: List[Document]
     ) -> float:
         """
-        Compute cross-platform confirmation score.
-        Weighted by platform quality.
+        Compute cross-source confirmation score.
+
+        Each unique source (feed/subreddit/channel) is scored individually
+        by its quality weight. Having coverage from multiple distinct sources
+        increases the score.
         """
         if not docs:
             return 0.0
 
-        source_ids = set(d.source_id for d in docs)
+        source_ids = set(d.source_id for d in docs if d.source_id)
+        if not source_ids:
+            return 0.0
         sources = session.query(Source).filter(Source.id.in_(source_ids)).all()
 
-        # Count by platform with quality weighting
-        platform_scores = {}
-        for source in sources:
-            platform = source.source_type
-            weight = source.weight or 1.0
-            if platform not in platform_scores:
-                platform_scores[platform] = weight
-            else:
-                platform_scores[platform] = max(platform_scores[platform], weight)
-
-        if len(platform_scores) <= 1:
+        if len(sources) <= 1:
             return 0.0
 
-        # Score based on number of platforms and quality
-        return min(1.0, sum(platform_scores.values()) / 3.0)
+        # Each source contributes its weight
+        total_weight = sum(s.weight or 1.0 for s in sources)
+        return min(1.0, total_weight / 3.0)
 
     def _compute_z_score(self, value: float, baseline_values: List[float]) -> float:
         """Compute z-score of value against baseline"""
@@ -418,6 +425,82 @@ class VelocityEngine:
                         cross_platform_score=metrics["cross_platform_score"],
                     )
                     session.add(signal)
+
+                    # Upsert daily snapshot for trend tracking
+                    today = datetime.now(timezone.utc).date()
+                    source_names = metrics.get("source_names", [])
+
+                    # Compute momentum % (Δ vs 30d baseline)
+                    baseline_daily_avg = 0.0
+                    baseline_counts = self._get_daily_counts(
+                        self._get_entity_documents(
+                            session, entity_id,
+                            datetime.now(timezone.utc) - timedelta(days=30),
+                            datetime.now(timezone.utc),
+                        )
+                    )
+                    if baseline_counts and len(baseline_counts) >= 3:
+                        baseline_daily_avg = float(np.mean(baseline_counts))
+                    window_delta_days = WINDOWS.get(window, timedelta(days=7)).days or 1
+                    expected = baseline_daily_avg * max(window_delta_days, 1)
+                    if expected > 0:
+                        momentum_pct = ((metrics["mention_count"] - expected) / expected) * 100
+                    else:
+                        momentum_pct = 0.0 if metrics["mention_count"] == 0 else 100.0
+
+                    # Compute confidence score
+                    hours_since_latest = 48.0  # default to stale
+                    if metrics["mention_count"] > 0:
+                        window_delta = WINDOWS.get(window, WINDOWS["24h"])
+                        window_start = datetime.now(timezone.utc) - window_delta
+                        recent_docs = self._get_entity_documents(
+                            session, entity_id, window_start, datetime.now(timezone.utc)
+                        )
+                        if recent_docs:
+                            latest_pub = max(
+                                (d.published_at for d in recent_docs if d.published_at),
+                                default=None,
+                            )
+                            if latest_pub:
+                                if latest_pub.tzinfo is None:
+                                    latest_pub = latest_pub.replace(tzinfo=timezone.utc)
+                                age = datetime.now(timezone.utc) - latest_pub
+                                hours_since_latest = age.total_seconds() / 3600
+
+                    volume_f = min(1.0, metrics["mention_count"] / 10)
+                    breadth_f = min(1.0, metrics["platform_count"] / 5)
+                    freshness_f = max(0.0, 1.0 - hours_since_latest / 48)
+                    confidence = round(0.40 * volume_f + 0.35 * breadth_f + 0.25 * freshness_f, 2)
+
+                    # Upsert snapshot
+                    existing = (
+                        session.query(DailySnapshot)
+                        .filter_by(entity_id=entity_id, date=today, window=window)
+                        .first()
+                    )
+                    if existing:
+                        existing.mentions = metrics["mention_count"]
+                        existing.momentum_pct = round(momentum_pct, 1)
+                        existing.acceleration = metrics["acceleration"]
+                        existing.source_count = metrics["platform_count"]
+                        existing.source_names = source_names
+                        existing.sentiment_mean = metrics["sentiment_mean"]
+                        existing.confidence = confidence
+                    else:
+                        snap = DailySnapshot(
+                            entity_id=entity_id,
+                            date=today,
+                            window=window,
+                            mentions=metrics["mention_count"],
+                            momentum_pct=round(momentum_pct, 1),
+                            acceleration=metrics["acceleration"],
+                            source_count=metrics["platform_count"],
+                            source_names=source_names,
+                            sentiment_mean=metrics["sentiment_mean"],
+                            confidence=confidence,
+                        )
+                        session.add(snap)
+
                     computed += 1
 
                 except Exception as e:

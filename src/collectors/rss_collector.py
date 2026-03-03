@@ -18,6 +18,7 @@ import requests
 from .base import BaseCollector
 from ..models.database import (
     Source,
+    Author,
     Document,
     SourceType,
     get_session,
@@ -176,6 +177,45 @@ class RSSCollector(BaseCollector):
             logger.debug(f"Could not fetch full article from {url}: {e}")
             return None
 
+    def _extract_author(self, entry: Dict, source: Source) -> Optional[int]:
+        """Extract author from RSS entry and return author_id.
+
+        Checks feedparser's author fields, falling back to the source name
+        so every document gets an author record for breadth scoring.
+        """
+        author_name = None
+
+        # Try feedparser author fields
+        if entry.get("author"):
+            author_name = entry["author"].strip()
+        elif entry.get("author_detail", {}).get("name"):
+            author_name = entry["author_detail"]["name"].strip()
+        elif entry.get("authors"):
+            # Some feeds provide a list
+            first = entry["authors"][0] if entry["authors"] else {}
+            if isinstance(first, dict):
+                author_name = first.get("name", "").strip()
+            elif isinstance(first, str):
+                author_name = first.strip()
+
+        # Fallback: use source name (e.g. "SeekingAlpha", "MarketWatch")
+        if not author_name:
+            author_name = source.name or "Unknown"
+
+        if not author_name:
+            return None
+
+        try:
+            author = self.get_or_create_author(
+                username=author_name,
+                platform=SourceType.RSS,
+                display_name=author_name,
+            )
+            return author.id
+        except Exception as e:
+            logger.debug(f"Could not create author '{author_name}': {e}")
+            return None
+
     def _process_entry(
         self,
         entry: Dict,
@@ -195,9 +235,12 @@ class RSSCollector(BaseCollector):
                 if full_content:
                     content = full_content
 
+            # Extract author
+            author_id = self._extract_author(entry, source)
+
             doc = Document(
                 source_id=source.id,
-                author_id=None,  # RSS typically doesn't have author tracking
+                author_id=author_id,
                 external_id=external_id,
                 url=url,
                 title=entry.get("title", ""),
@@ -236,6 +279,11 @@ class RSSCollector(BaseCollector):
             feed_name = feed_config.get("name", feed_url)
 
             if not feed_url:
+                continue
+
+            # Skip disabled feeds
+            if feed_config.get("enabled") is False:
+                logger.debug(f"Skipping disabled feed: {feed_name}")
                 continue
 
             logger.info(f"Collecting from {feed_name}...")

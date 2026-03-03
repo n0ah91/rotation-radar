@@ -9,6 +9,8 @@ Usage:
     python scripts/backfill.py --entities-only     # Just re-extract entities
     python scripts/backfill.py --sentiment-only    # Just re-score sentiment
     python scripts/backfill.py --signals-only      # Just re-compute signals
+    python scripts/backfill.py --authors-only      # Just backfill missing authors
+    python scripts/backfill.py --snapshots-only    # Just generate daily snapshots
 """
 
 import sys
@@ -22,7 +24,14 @@ import yaml
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.models.database import init_db, get_session, Document
+from src.models.database import (
+    init_db,
+    get_session,
+    Document,
+    Author,
+    Source,
+    SourceType,
+)
 from src.processing.entity_extraction import EntityExtractor
 from src.processing.sentiment import SentimentAnalyzer
 from src.processing.velocity import VelocityEngine
@@ -75,11 +84,78 @@ def reset_sentiment(db_path: str):
         session.close()
 
 
+def backfill_authors(db_path: str):
+    """Backfill missing author records for documents without authors.
+
+    Creates Author records using the source name as the author username,
+    then links orphan documents to those authors.
+    """
+    session = get_session(db_path)
+    try:
+        # Find documents missing authors
+        orphan_docs = (
+            session.query(Document)
+            .filter(Document.author_id == None)
+            .all()
+        )
+        logger.info(f"Found {len(orphan_docs)} documents without authors")
+
+        if not orphan_docs:
+            return
+
+        # Group by source_id for efficient author creation
+        source_ids = set(d.source_id for d in orphan_docs if d.source_id)
+        source_author_map = {}
+
+        for source_id in source_ids:
+            source = session.query(Source).filter(Source.id == source_id).first()
+            if not source:
+                continue
+
+            author_name = source.name or source.identifier or f"Source_{source_id}"
+            platform = source.source_type or SourceType.RSS
+
+            # Get or create author
+            author = (
+                session.query(Author)
+                .filter(Author.platform == platform, Author.username == author_name)
+                .first()
+            )
+            if not author:
+                author = Author(
+                    platform=platform,
+                    username=author_name,
+                    display_name=author_name,
+                )
+                session.add(author)
+                session.flush()  # Get the ID
+                logger.info(f"Created author: {author_name} (platform={platform.value})")
+
+            source_author_map[source_id] = author.id
+
+        # Link documents to authors
+        linked = 0
+        for doc in orphan_docs:
+            if doc.source_id in source_author_map:
+                doc.author_id = source_author_map[doc.source_id]
+                linked += 1
+
+        session.commit()
+        logger.info(f"Linked {linked} documents to authors")
+
+    finally:
+        session.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Rotation Radar Backfill")
     parser.add_argument("--entities-only", action="store_true")
     parser.add_argument("--sentiment-only", action="store_true")
     parser.add_argument("--signals-only", action="store_true")
+    parser.add_argument("--authors-only", action="store_true",
+                        help="Backfill missing author records")
+    parser.add_argument("--snapshots-only", action="store_true",
+                        help="Generate daily snapshots from existing signals")
     args = parser.parse_args()
 
     config = load_config()
@@ -91,7 +167,17 @@ def main():
 
     taxonomy_path = project_root / "config" / "taxonomy.yaml"
 
-    if args.entities_only or not (args.sentiment_only or args.signals_only):
+    # Determine what to run
+    specific_mode = any([
+        args.entities_only, args.sentiment_only, args.signals_only,
+        args.authors_only, args.snapshots_only,
+    ])
+
+    if args.authors_only or not specific_mode:
+        logger.info("Backfilling authors...")
+        backfill_authors(db_path)
+
+    if args.entities_only or not specific_mode:
         logger.info("Re-extracting entities...")
         reset_processing_flags(db_path)
         extractor = EntityExtractor(
@@ -101,15 +187,15 @@ def main():
         count = extractor.process_unprocessed_documents(limit=10000)
         logger.info(f"Entity extraction: processed {count} documents")
 
-    if args.sentiment_only or not (args.entities_only or args.signals_only):
+    if args.sentiment_only or not specific_mode:
         logger.info("Re-scoring sentiment...")
         reset_sentiment(db_path)
         analyzer = SentimentAnalyzer(db_path=db_path)
         count = analyzer.process_documents(limit=10000)
         logger.info(f"Sentiment analysis: processed {count} documents")
 
-    if args.signals_only or not (args.entities_only or args.sentiment_only):
-        logger.info("Re-computing signals...")
+    if args.signals_only or args.snapshots_only or not specific_mode:
+        logger.info("Re-computing signals (includes snapshot generation)...")
         velocity = VelocityEngine(db_path=db_path)
         divergence = DivergenceEngine(db_path=db_path)
         model = SignalModel(db_path=db_path)

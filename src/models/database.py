@@ -28,11 +28,13 @@ from sqlalchemy import (
     Float,
     Boolean,
     Text,
+    Date,
     DateTime,
     ForeignKey,
     Index,
     JSON,
     Enum,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     declarative_base,
@@ -398,6 +400,51 @@ class JournalEntry(Base):
     entry_price = Column(Float)
     exit_price = Column(Float)
     outcome = Column(String(20))  # win, loss, open
+
+
+# ============================================================
+# Daily Snapshots (for trend tracking and transparent metrics)
+# ============================================================
+
+class DailySnapshot(Base):
+    """Daily snapshot of entity metrics for historical tracking.
+
+    Stores transparent, audit-ready metrics per entity per day:
+    - Raw mention counts and momentum %
+    - Source names and counts
+    - Confidence score based on data completeness
+    - Underlying signal score (kept for internal use)
+    """
+
+    __tablename__ = "daily_snapshots"
+
+    id = Column(Integer, primary_key=True)
+    entity_id = Column(Integer, ForeignKey("entities.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    window = Column(String(10), default="7d")
+
+    # Transparent metrics
+    mentions = Column(Integer, default=0)
+    momentum_pct = Column(Float, default=0.0)  # Δ vs 30d baseline (%)
+    acceleration = Column(Float, default=0.0)  # 2nd derivative
+    source_count = Column(Integer, default=0)
+    source_names = Column(JSON)  # ["SeekingAlpha", "Yahoo", ...]
+    sentiment_mean = Column(Float, default=0.0)  # -1 to +1
+    confidence = Column(Float, default=0.0)  # 0-1 data completeness
+
+    # Underlying scores (kept for internal use / detail views)
+    signal_score = Column(Float, default=0.0)
+    heat_score = Column(Float, default=0.0)
+    edge_score = Column(Float, default=0.0)
+
+    # Relationships
+    entity = relationship("Entity")
+
+    __table_args__ = (
+        UniqueConstraint("entity_id", "date", "window", name="uq_snapshot_entity_date_window"),
+        Index("ix_snapshots_date", "date"),
+        Index("ix_snapshots_entity_window", "entity_id", "window"),
+    )
 
 
 # ============================================================
